@@ -1,4 +1,4 @@
-name: SQL Syntax Check on File Approval
+name: SQL Validation on PR Approval
 
 on:
   pull_request_review:
@@ -6,7 +6,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  check-sql-syntax:
+  validate-sql:
     runs-on: ubuntu-latest
     if: github.event.review.state == 'approved'
     
@@ -16,75 +16,16 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.ref }}
         
-    - name: Show PR Info
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
       run: |
-        echo "🔍 PR Review Approved!"
-        echo "PR Title: ${{ github.event.pull_request.title }}"
-        echo "Reviewer: ${{ github.event.review.user.login }}"
-        echo "Review State: ${{ github.event.review.state }}"
-        echo "Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}"
-        echo ""
+        pip install -r requirements.txt
         
-    - name: Check SQL Syntax
+    - name: Run SQL validation
       run: |
-        echo "🔍 Checking SQL syntax for approved files..."
-        
-        # Find all SQL files in the PR
-        SQL_FILES=$(find . -name "*.sql" -type f)
-        
-        if [ -n "$SQL_FILES" ]; then
-          echo "📁 Found SQL files:"
-          echo "$SQL_FILES"
-          echo ""
-          
-          # Check each SQL file
-          for file in $SQL_FILES; do
-            echo "✅ Checking: $file"
-            echo "   Size: $(wc -c < "$file") bytes"
-            echo "   Lines: $(wc -l < "$file") lines"
-            
-            # Basic SQL syntax check (check if file is readable)
-            if [ -r "$file" ]; then
-              echo "   Status: ✅ File readable"
-            else
-              echo "   Status: ❌ File not readable"
-              exit 1
-            fi
-            
-            # Check if file has content
-            if [ -s "$file" ]; then
-              echo "   Status: ✅ File has content"
-            else
-              echo "   Status: ❌ File is empty"
-              exit 1
-            fi
-            
-            # Check if file contains valid SQL content
-            if grep -q "SELECT\|INSERT\|UPDATE\|DELETE\|CREATE\|ALTER\|DROP" "$file"; then
-              echo "   Status: ✅ Contains SQL keywords"
-            else
-              echo "   Status: ⚠️  No SQL keywords found (might be empty or non-SQL)"
-            fi
-            
-            echo ""
-          done
-          
-          echo "🎉 All SQL files passed syntax check!"
-        else
-          echo "⚠️  No SQL files found in this PR"
-        fi
-        
-    - name: Success Status
-      if: success()
-      run: |
-        echo "✅ SQL Syntax Check: PASSED"
-        echo "All SQL files are valid and ready for merge"
-        echo "You can now merge the PR manually"
-        
-    - name: Failure Status
-      if: failure()
-      run: |
-        echo "❌ SQL Syntax Check: FAILED"
-        echo "Please fix the SQL syntax issues before merging"
-        echo "Check the logs above for specific error details"
-        exit 1
+        echo "🔍 PR Approved - Running SQL validation..."
+        python work.py
