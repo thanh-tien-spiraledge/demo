@@ -2,7 +2,7 @@ name: Auto PR & Build Pipeline
 
 on:
   push:
-    branches-ignore: [ main, master ]
+    branches-ignore: [ main, master, staging ]
   pull_request:
     branches: [ main, master ]
 
