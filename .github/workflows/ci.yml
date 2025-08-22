@@ -1,4 +1,4 @@
-name: Auto PR & Build Pipeline
+name: Auto PR & Build for SQL
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           This PR was automatically created from branch: **${{ github.ref_name }}**
           
           ### Changes:
-          - Auto-generated PR from feature branch
+          - SQL files updated
           - Ready for review and merge
           
           ### Branch Info:
@@ -43,58 +43,26 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
         
-    - name: Install dependencies
+    - name: Check SQL files
       run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        echo "Checking SQL files..."
         
-    - name: Build application
-      run: |
-        echo "Building application..."
-        echo "Checking Python files..."
+        # Find all SQL files
+        SQL_FILES=$(find . -name "*.sql" -type f)
         
-        # List all Python files
-        find . -name "*.py" -type f
-        
-        # Check if setup.py exists
-        if [ -f setup.py ]; then
-          echo "Building with setup.py..."
-          python setup.py build
-        elif [ -f pyproject.toml ]; then
-          echo "Building with poetry..."
-          pip install poetry
-          poetry build
-        elif [ -f requirements.txt ]; then
-          echo "Installing dependencies and checking syntax..."
-          pip install -r requirements.txt
-          python -m py_compile *.py
-        else
-          echo "Simple Python project - checking syntax..."
-          # Check Python syntax for all .py files
-          for file in *.py; do
-            if [ -f "$file" ]; then
-              echo "Checking syntax: $file"
-              python -m py_compile "$file"
-            fi
-          done
+        if [ -n "$SQL_FILES" ]; then
+          echo "Found SQL files:"
+          echo "$SQL_FILES"
           
-          # Run a simple test
-          echo "Running simple test..."
-          python demo1.py
+          # Check each SQL file
+          for file in $SQL_FILES; do
+            echo "Checking: $file"
+            echo "File size: $(wc -c < "$file") bytes"
+            echo "Line count: $(wc -l < "$file") lines"
+          done
+        else
+          echo "No SQL files found"
         fi
         
         echo "Build completed successfully!"
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          dist/
-          build/
