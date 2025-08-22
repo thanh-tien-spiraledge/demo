@@ -18,3 +18,8 @@ select * from products;
 select * from orders;
 select * from customers;
 select * from suppliers;
+elect * from orders;
+select * from customers;
+select * from suppliers;
+select ***...
+;;;;;; se  
