@@ -57,13 +57,39 @@ jobs:
     - name: Build application
       run: |
         echo "Building application..."
-        # Build Python package
-        python setup.py build
-        # Hoặc nếu dùng pip
-        # pip install build
-        # python -m build
-        # Hoặc nếu dùng poetry
-        # poetry build
+        echo "Checking Python files..."
+        
+        # List all Python files
+        find . -name "*.py" -type f
+        
+        # Check if setup.py exists
+        if [ -f setup.py ]; then
+          echo "Building with setup.py..."
+          python setup.py build
+        elif [ -f pyproject.toml ]; then
+          echo "Building with poetry..."
+          pip install poetry
+          poetry build
+        elif [ -f requirements.txt ]; then
+          echo "Installing dependencies and checking syntax..."
+          pip install -r requirements.txt
+          python -m py_compile *.py
+        else
+          echo "Simple Python project - checking syntax..."
+          # Check Python syntax for all .py files
+          for file in *.py; do
+            if [ -f "$file" ]; then
+              echo "Checking syntax: $file"
+              python -m py_compile "$file"
+            fi
+          done
+          
+          # Run a simple test
+          echo "Running simple test..."
+          python demo1.py
+        fi
+        
+        echo "Build completed successfully!"
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
