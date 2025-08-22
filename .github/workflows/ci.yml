@@ -1,8 +1,8 @@
-name: SQL Syntax Check on PR Approval
+name: SQL Syntax Check on File Approval
 
 on:
-  pull_request:
-    types: [review_requested, submitted]
+  pull_request_review:
+    types: [submitted]
     branches: [ main, master ]
 
 jobs:
@@ -16,11 +16,20 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.ref }}
         
+    - name: Show PR Info
+      run: |
+        echo "🔍 PR Review Approved!"
+        echo "PR Title: ${{ github.event.pull_request.title }}"
+        echo "Reviewer: ${{ github.event.review.user.login }}"
+        echo "Review State: ${{ github.event.review.state }}"
+        echo "Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}"
+        echo ""
+        
     - name: Check SQL Syntax
       run: |
-        echo "🔍 Checking SQL syntax after PR approval..."
+        echo "🔍 Checking SQL syntax for approved files..."
         
-        # Find all SQL files
+        # Find all SQL files in the PR
         SQL_FILES=$(find . -name "*.sql" -type f)
         
         if [ -n "$SQL_FILES" ]; then
@@ -50,6 +59,13 @@ jobs:
               exit 1
             fi
             
+            # Check if file contains valid SQL content
+            if grep -q "SELECT\|INSERT\|UPDATE\|DELETE\|CREATE\|ALTER\|DROP" "$file"; then
+              echo "   Status: ✅ Contains SQL keywords"
+            else
+              echo "   Status: ⚠️  No SQL keywords found (might be empty or non-SQL)"
+            fi
+            
             echo ""
           done
           
@@ -62,11 +78,13 @@ jobs:
       if: success()
       run: |
         echo "✅ SQL Syntax Check: PASSED"
-        echo "All SQL files are valid and ready for review"
+        echo "All SQL files are valid and ready for merge"
+        echo "You can now merge the PR manually"
         
     - name: Failure Status
       if: failure()
       run: |
         echo "❌ SQL Syntax Check: FAILED"
-        echo "Please fix the issues before merging"
+        echo "Please fix the SQL syntax issues before merging"
+        echo "Check the logs above for specific error details"
         exit 1
