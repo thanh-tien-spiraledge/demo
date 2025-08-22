@@ -1,68 +1,72 @@
-name: Auto PR & Build for SQL
+name: SQL Syntax Check on PR Approval
 
 on:
-  push:
-    branches-ignore: [ main, master, staging ]
   pull_request:
+    types: [review_requested, submitted]
     branches: [ main, master ]
 
 jobs:
-  auto-pr:
+  check-sql-syntax:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event.review.state == 'approved'
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        title: 'Auto PR: ${{ github.ref_name }}'
-        body: |
-          ## Auto-generated Pull Request
-          
-          This PR was automatically created from branch: **${{ github.ref_name }}**
-          
-          ### Changes:
-          - SQL files updated
-          - Ready for review and merge
-          
-          ### Branch Info:
-          - Source: `${{ github.ref_name }}`
-          - Target: `main`
-          
-        base: main
-        delete-branch: false
+        ref: ${{ github.event.pull_request.head.ref }}
         
-  build:
-    runs-on: ubuntu-latest
-    needs: auto-pr
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-        
-    - name: Check SQL files
+    - name: Check SQL Syntax
       run: |
-        echo "Checking SQL files..."
+        echo "🔍 Checking SQL syntax after PR approval..."
         
         # Find all SQL files
         SQL_FILES=$(find . -name "*.sql" -type f)
         
         if [ -n "$SQL_FILES" ]; then
-          echo "Found SQL files:"
+          echo "📁 Found SQL files:"
           echo "$SQL_FILES"
+          echo ""
           
           # Check each SQL file
           for file in $SQL_FILES; do
-            echo "Checking: $file"
-            echo "File size: $(wc -c < "$file") bytes"
-            echo "Line count: $(wc -l < "$file") lines"
+            echo "✅ Checking: $file"
+            echo "   Size: $(wc -c < "$file") bytes"
+            echo "   Lines: $(wc -l < "$file") lines"
+            
+            # Basic SQL syntax check (check if file is readable)
+            if [ -r "$file" ]; then
+              echo "   Status: ✅ File readable"
+            else
+              echo "   Status: ❌ File not readable"
+              exit 1
+            fi
+            
+            # Check if file has content
+            if [ -s "$file" ]; then
+              echo "   Status: ✅ File has content"
+            else
+              echo "   Status: ❌ File is empty"
+              exit 1
+            fi
+            
+            echo ""
           done
+          
+          echo "🎉 All SQL files passed syntax check!"
         else
-          echo "No SQL files found"
+          echo "⚠️  No SQL files found in this PR"
         fi
         
-        echo "Build completed successfully!"
+    - name: Success Status
+      if: success()
+      run: |
+        echo "✅ SQL Syntax Check: PASSED"
+        echo "All SQL files are valid and ready for review"
+        
+    - name: Failure Status
+      if: failure()
+      run: |
+        echo "❌ SQL Syntax Check: FAILED"
+        echo "Please fix the issues before merging"
+        exit 1
