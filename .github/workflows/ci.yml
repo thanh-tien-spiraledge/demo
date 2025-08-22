@@ -2,7 +2,7 @@ name: Auto PR & Build Pipeline
 
 on:
   push:
-    branches-ignore: [ main, master ]
+    branches-ignore: [ main, master, staging ]
   pull_request:
     branches: [ main, master ]
 
@@ -33,7 +33,6 @@ jobs:
           - Source: `${{ github.ref_name }}`
           - Target: `main`
           
-        branch: main
         base: main
         delete-branch: false
         
@@ -67,7 +66,7 @@ jobs:
         # poetry build
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: |
