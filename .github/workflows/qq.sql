@@ -9,3 +9,12 @@ select * from products;
 select * from orders;
 select * from customers;
 select * from suppliers;
+
+select * from customers;
+select * from suppliers;
+select * from employees;
+select * from categories;
+select * from products;
+select * from orders;
+select * from customers;
+select * from suppliers;
