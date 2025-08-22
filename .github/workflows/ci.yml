@@ -1,12 +1,45 @@
-name: CI/CD Pipeline
+name: Auto PR & Build Pipeline
 
 on:
+  push:
+    branches-ignore: [ main, master ]
   pull_request:
     branches: [ main, master ]
 
 jobs:
-  test:
+  auto-pr:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: 'Auto PR: ${{ github.ref_name }}'
+        body: |
+          ## Auto-generated Pull Request
+          
+          This PR was automatically created from branch: **${{ github.ref_name }}**
+          
+          ### Changes:
+          - Auto-generated PR from feature branch
+          - Ready for review and merge
+          
+          ### Branch Info:
+          - Source: `${{ github.ref_name }}`
+          - Target: `main`
+          
+        branch: main
+        base: main
+        delete-branch: false
+        
+  build:
+    runs-on: ubuntu-latest
+    needs: auto-pr
     
     steps:
     - name: Checkout code
@@ -22,31 +55,6 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
-    - name: Run tests
-      run: |
-        echo "Running tests..."
-        # Thêm lệnh chạy test của bạn ở đây
-        # Ví dụ: python -m pytest
-        
-    - name: Run linting
-      run: |
-        echo "Running linting..."
-        # Thêm lệnh chạy linting của bạn ở đây
-        # Ví dụ: flake8, black --check, etc.
-        
-    - name: Run security checks
-      run: |
-        echo "Running security checks..."
-        # Thêm lệnh chạy security checks của bạn ở đây
-        
-  build:
-    runs-on: ubuntu-latest
-    needs: test
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
     - name: Build application
       run: |
         echo "Building application..."
@@ -65,13 +73,3 @@ jobs:
         path: |
           dist/
           build/
-          
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    
-    steps:
-    - name: Deploy to staging
-      run: |
-        echo "Deploying to staging environment..."
-        # Thêm lệnh deploy staging của bạn ở đây
