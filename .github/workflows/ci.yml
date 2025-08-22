@@ -33,7 +33,6 @@ jobs:
           - Source: `${{ github.ref_name }}`
           - Target: `main`
           
-        branch: main
         base: main
         delete-branch: false
         
