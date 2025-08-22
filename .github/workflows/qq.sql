@@ -21,3 +21,4 @@ select * from suppliers;
 elect * from orders;
 select * from customers;
 select * from suppliers;
+select ***...
